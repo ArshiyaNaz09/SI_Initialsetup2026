@@ -1,0 +1,41 @@
+buildscript {
+    ext {
+        buildToolsVersion = "35.0.0"
+        minSdkVersion = 24
+        compileSdkVersion = 36
+        targetSdkVersion = 36
+        ndkVersion = "28.0.12433566"
+        kotlinVersion = "2.1.20"
+    }
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.7.0")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath 'com.google.gms:google-services:4.4.3'
+    }
+}
+allprojects {
+    configurations.all {
+        resolutionStrategy {
+            force 'androidx.core:core:1.16.0' // or latest stable
+            force 'androidx.appcompat:appcompat:1.6.1' // or latest stable
+            force 'com.google.firebase:firebase-analytics:21.5.0'
+            force 'com.google.android.gms:play-services-base:18.4.0'
+            // Add other dependencies if needed
+        }
+    }
+}
+// subprojects {
+//     configurations.all {
+//         resolutionStrategy.eachDependency { DependencyResolveDetails details ->
+//             if (details.requested.group == 'com.android.support') {
+//                 throw new GradleException("Support libraries are not allowed. Found: ${details.requested.name}")
+//             }
+//         }
+//     }
+// }
+apply plugin: "com.facebook.react.rootproject"

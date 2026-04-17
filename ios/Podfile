@@ -1,0 +1,68 @@
+require_relative '../node_modules/react-native/scripts/react_native_pods'
+# require_relative '../node_modules/react-native/scripts/native_modules'
+
+platform :ios, min_ios_version_supported
+prepare_react_native_project!
+
+# Only these pods will use modular headers
+# pod 'gRPC-Core', :modular_headers => true
+# pod 'gRPC-C++', :modular_headers => true
+# pod 'gRPC', :modular_headers => true
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+else
+  use_frameworks! :linkage => :static
+  $RNFirebaseAsStaticFramework = true
+end
+
+target 'selfinspection' do
+  config = use_native_modules!
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    :hermes_enabled => true,
+    :fabric_enabled => true,
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  # Ensure AsyncStorage is properly linked
+  pod 'RNCAsyncStorage', :path => '../node_modules/@react-native-async-storage/async-storage'
+
+  post_install do |installer|
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false
+    )
+
+    installer.pods_project.targets.each do |target|
+      # Fix Abseil duplicate archive issue (Xcode 16)
+      if target.name.start_with?('abseil')
+        target.build_configurations.each do |config|
+          config.build_settings['MACH_O_TYPE'] = 'staticlib'
+        end
+      end
+    end
+
+    installer.pods_project.targets.each do |target|
+      if target.name == 'hermes-engine'
+        target.build_configurations.each do |config|
+          config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
+          config.build_settings['STRIP_INSTALLED_PRODUCT'] = 'NO'
+        end
+      end
+    end
+
+    # Silence gRPC modular header warnings
+    installer.pods_project.targets.each do |target|
+      if ['gRPC-Core', 'gRPC-C++', 'gRPC'].include? target.name
+        target.build_configurations.each do |config|
+          config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+        end
+      end
+    end
+  end
+end

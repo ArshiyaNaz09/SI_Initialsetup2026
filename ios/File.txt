@@ -1,0 +1,1 @@
+/Users/adfcait/Desktop/selfinspectionNew/node_modules/react-native-vector-icons/Fonts/AntDesign.ttf
